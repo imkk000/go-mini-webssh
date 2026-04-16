@@ -1,15 +1,23 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/ecdh"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -30,6 +38,12 @@ type ResizeMsg struct {
 	Rows uint32 `json:"rows"`
 }
 
+// KeyMsg is used for the ECDH public-key exchange at session start.
+type KeyMsg struct {
+	Type string `json:"type"`
+	Pub  string `json:"pub"` // base64-encoded uncompressed P-256 public key
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  4096,
 	WriteBufferSize: 4096,
@@ -38,23 +52,83 @@ var upgrader = websocket.Upgrader{
 }
 
 // safeWriter serialises concurrent WebSocket writes (gorilla/websocket is not
-// goroutine-safe for concurrent writes).
+// goroutine-safe for concurrent writes).  When gcm is set every outgoing
+// message is encrypted with AES-256-GCM before being sent as a binary frame.
 type safeWriter struct {
 	mu   sync.Mutex
 	conn *websocket.Conn
+	gcm  cipher.AEAD // nil until key exchange completes
 }
 
 func (sw *safeWriter) write(data []byte) error {
 	sw.mu.Lock()
 	defer sw.mu.Unlock()
+	if sw.gcm != nil {
+		enc, err := encryptMsg(sw.gcm, data)
+		if err != nil {
+			return err
+		}
+		return sw.conn.WriteMessage(websocket.BinaryMessage, enc)
+	}
 	return sw.conn.WriteMessage(websocket.BinaryMessage, data)
 }
 
+// writeText sends a human-readable message to the terminal.  After the key
+// exchange it is encrypted and sent as a binary frame so the content stays
+// invisible in network inspectors.
 func (sw *safeWriter) writeText(msg string) {
 	sw.mu.Lock()
 	defer sw.mu.Unlock()
+	if sw.gcm != nil {
+		enc, err := encryptMsg(sw.gcm, []byte(msg))
+		if err != nil {
+			return
+		}
+		_ = sw.conn.WriteMessage(websocket.BinaryMessage, enc)
+		return
+	}
 	_ = sw.conn.WriteMessage(websocket.TextMessage, []byte(msg))
 }
+
+// ── Crypto helpers ──────────────────────────────────────────────────────────
+
+// deriveAESKey runs HKDF-SHA256 over the ECDH shared secret and returns an
+// AES-256-GCM AEAD.
+func deriveAESKey(sharedSecret []byte) (cipher.AEAD, error) {
+	r := hkdf.New(sha256.New, sharedSecret,
+		[]byte("webssh-session"),
+		[]byte("aes-256-gcm-key"),
+	)
+	key := make([]byte, 32)
+	if _, err := io.ReadFull(r, key); err != nil {
+		return nil, err
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	return cipher.NewGCM(block)
+}
+
+// encryptMsg prepends a random 12-byte nonce and returns nonce||ciphertext.
+func encryptMsg(gcm cipher.AEAD, plaintext []byte) ([]byte, error) {
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return nil, err
+	}
+	return gcm.Seal(nonce, nonce, plaintext, nil), nil
+}
+
+// decryptMsg splits off the leading nonce and authenticates + decrypts.
+func decryptMsg(gcm cipher.AEAD, data []byte) ([]byte, error) {
+	ns := gcm.NonceSize()
+	if len(data) < ns {
+		return nil, fmt.Errorf("ciphertext too short")
+	}
+	return gcm.Open(nil, data[:ns], data[ns:], nil)
+}
+
+// ── SSH auth ────────────────────────────────────────────────────────────────
 
 // buildAuthMethods constructs the SSH auth method list from the config.
 // Private key auth is preferred when a key is provided; password auth is
@@ -89,8 +163,11 @@ func buildAuthMethods(cfg ConnectConfig) ([]ssh.AuthMethod, error) {
 	return methods, nil
 }
 
-// handleWS upgrades an HTTP connection to WebSocket and then proxies data
-// between the browser and an SSH server.
+// ── WebSocket handler ────────────────────────────────────────────────────────
+
+// handleWS upgrades an HTTP connection to WebSocket, performs an ECDH key
+// exchange to establish a shared AES-256-GCM session key, then proxies
+// encrypted data between the browser and an SSH server.
 func handleWS(w http.ResponseWriter, r *http.Request) {
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -101,14 +178,81 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 
 	sw := &safeWriter{conn: wsConn}
 
-	// ── 1. Read the first WebSocket message – SSH connection config ──────────
+	// ── 0. ECDH key exchange ─────────────────────────────────────────────────
+
+	curve := ecdh.P256()
+	serverPriv, err := curve.GenerateKey(rand.Reader)
+	if err != nil {
+		log.Printf("ecdh keygen: %v", err)
+		return
+	}
+
+	// Send server public key (plain text frame – this is the exchange itself)
+	serverKeyMsg, _ := json.Marshal(KeyMsg{
+		Type: "key",
+		Pub:  base64.StdEncoding.EncodeToString(serverPriv.PublicKey().Bytes()),
+	})
+	if err := wsConn.WriteMessage(websocket.TextMessage, serverKeyMsg); err != nil {
+		log.Printf("send server key: %v", err)
+		return
+	}
+
+	// Receive client public key
+	wsConn.SetReadDeadline(time.Now().Add(10 * time.Second))
+	_, clientKeyRaw, err := wsConn.ReadMessage()
+	wsConn.SetReadDeadline(time.Time{})
+	if err != nil {
+		log.Printf("recv client key: %v", err)
+		return
+	}
+
+	var clientKeyMsg KeyMsg
+	if err := json.Unmarshal(clientKeyRaw, &clientKeyMsg); err != nil || clientKeyMsg.Type != "key" {
+		log.Printf("invalid client key message")
+		return
+	}
+
+	clientPubBytes, err := base64.StdEncoding.DecodeString(clientKeyMsg.Pub)
+	if err != nil {
+		log.Printf("decode client pub: %v", err)
+		return
+	}
+
+	clientPub, err := curve.NewPublicKey(clientPubBytes)
+	if err != nil {
+		log.Printf("parse client pub: %v", err)
+		return
+	}
+
+	sharedSecret, err := serverPriv.ECDH(clientPub)
+	if err != nil {
+		log.Printf("ecdh shared secret: %v", err)
+		return
+	}
+
+	gcm, err := deriveAESKey(sharedSecret)
+	if err != nil {
+		log.Printf("derive aes key: %v", err)
+		return
+	}
+
+	// All subsequent messages are now encrypted
+	sw.gcm = gcm
+
+	// ── 1. Read SSH config (encrypted binary frame) ──────────────────────────
 	wsConn.SetReadDeadline(time.Now().Add(30 * time.Second))
-	_, msg, err := wsConn.ReadMessage()
+	_, encCfg, err := wsConn.ReadMessage()
+	wsConn.SetReadDeadline(time.Time{})
 	if err != nil {
 		log.Printf("read config: %v", err)
 		return
 	}
-	wsConn.SetReadDeadline(time.Time{}) // clear deadline
+
+	msg, err := decryptMsg(gcm, encCfg)
+	if err != nil {
+		sw.writeText(fmt.Sprintf("decryption error: %v\r\n", err))
+		return
+	}
 
 	var cfg ConnectConfig
 	if err := json.Unmarshal(msg, &cfg); err != nil {
@@ -185,7 +329,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ── 6. Pipe SSH → WebSocket ──────────────────────────────────────────────
+	// ── 6. Pipe SSH → WebSocket (encrypted) ─────────────────────────────────
 	done := make(chan struct{})
 
 	copyToWS := func(src interface{ Read([]byte) (int, error) }) {
@@ -210,10 +354,16 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	go copyToWS(sshOut)
 	go copyToWS(sshErr)
 
-	// ── 7. Pipe WebSocket → SSH (main goroutine) ─────────────────────────────
+	// ── 7. Pipe WebSocket → SSH (decrypt then forward) ───────────────────────
 	for {
-		_, data, err := wsConn.ReadMessage()
+		_, encData, err := wsConn.ReadMessage()
 		if err != nil {
+			break
+		}
+
+		data, err := decryptMsg(gcm, encData)
+		if err != nil {
+			log.Printf("decrypt client message: %v", err)
 			break
 		}
 

@@ -58,8 +58,154 @@
         height: 100vh;
         display: flex;
         flex-direction: column;
+      }
+
+      /* ── Tab bar ── */
+      #tab-bar {
+        display: none;
+        align-items: center;
+        background: #161b22;
+        border-bottom: 1px solid #30363d;
+        height: 36px;
+        flex-shrink: 0;
+        overflow: hidden;
+      }
+
+      #tabs-container {
+        display: flex;
+        overflow-x: auto;
+        flex: 1;
+        height: 100%;
+        scrollbar-width: none;
+      }
+
+      #tabs-container::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tab {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 10px;
+        height: 100%;
+        background: transparent;
+        border: none;
+        border-right: 1px solid #30363d;
+        color: #8b949e;
+        font-size: 0.8rem;
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background 0.1s, color 0.1s;
+        border-top: 2px solid transparent;
+      }
+
+      .tab.active {
+        background: #0d1117;
+        color: #c9d1d9;
+        border-top-color: #58a6ff;
+      }
+
+      .tab:hover:not(.active) {
+        background: #21262d;
+        color: #c9d1d9;
+      }
+
+      .tab.disconnected .tab-label::after {
+        content: " ●";
+        color: #f85149;
+        font-size: 0.65rem;
+      }
+
+      .tab-label {
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        user-select: none;
+      }
+
+      .tab-close {
+        display: flex;
         align-items: center;
         justify-content: center;
+        background: none;
+        border: none;
+        color: #6e7681;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 2px 3px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+
+      .tab-close:hover {
+        color: #f85149;
+        background: rgba(248, 81, 73, 0.15);
+      }
+
+      #new-tab-btn {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        border-left: 1px solid #30363d;
+        color: #8b949e;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0 14px;
+        height: 100%;
+        transition: background 0.1s, color 0.1s;
+      }
+
+      #new-tab-btn:hover {
+        color: #c9d1d9;
+        background: #21262d;
+      }
+
+      /* ── Terminal area ── */
+      #terminal-area {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        display: none;
+      }
+
+      .terminal-slot {
+        position: absolute;
+        inset: 0;
+        display: none;
+        flex-direction: column;
+      }
+
+      .terminal-slot.active {
+        display: flex;
+      }
+
+      .terminal-container {
+        flex: 1;
+        padding: 4px;
+        overflow: hidden;
+      }
+
+      /* ── Connect overlay ── */
+      #connect-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        background: #0d1117;
+      }
+
+      #connect-overlay.with-backdrop {
+        background: rgba(13, 17, 23, 0.82);
+      }
+
+      #connect-overlay.hidden {
+        display: none;
       }
 
       /* ── Connect form ── */
@@ -70,6 +216,7 @@
         padding: 2rem 2.5rem;
         width: 380px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        position: relative;
       }
 
       #connect-panel h1 {
@@ -77,6 +224,27 @@
         margin-bottom: 1.4rem;
         color: #58a6ff;
         letter-spacing: 0.05em;
+      }
+
+      /* Close button (visible when sessions exist) */
+      #cancel-new-btn {
+        position: absolute;
+        top: 0.7rem;
+        right: 0.7rem;
+        background: none;
+        border: none;
+        color: #6e7681;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 3px 7px;
+        border-radius: 4px;
+        line-height: 1;
+        display: none;
+      }
+
+      #cancel-new-btn:hover {
+        color: #f85149;
+        background: rgba(248, 81, 73, 0.12);
       }
 
       /* ── Auth mode tabs ── */
@@ -198,137 +366,99 @@
       .status-info {
         color: #58a6ff;
       }
-
-      /* ── Terminal panel ── */
-      #terminal-panel {
-        display: none;
-        flex-direction: column;
-        width: 100%;
-        height: 100vh;
-        padding: 0;
-      }
-
-      #topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: #161b22;
-        border-bottom: 1px solid #30363d;
-        padding: 0.45rem 1rem;
-        flex-shrink: 0;
-      }
-
-      #topbar span {
-        font-size: 0.85rem;
-        color: #8b949e;
-      }
-
-      #topbar strong {
-        color: #c9d1d9;
-      }
-
-      #disconnect-btn {
-        background: #da3633;
-        border: none;
-        border-radius: 5px;
-        color: #fff;
-        padding: 0.3rem 0.8rem;
-        cursor: pointer;
-        font-size: 0.82rem;
-        transition: background 0.15s;
-      }
-
-      #disconnect-btn:hover {
-        background: #f85149;
-      }
-
-      #terminal-container {
-        flex: 1;
-        padding: 4px;
-        overflow: hidden;
-      }
     </style>
   </head>
 
   <body>
-    <!-- ── Connect form ── -->
-    <div id="connect-panel">
-      <h1>&#9112; WebSSH</h1>
-
-      <div class="row">
-        <div class="field">
-          <label>Host</label>
-          <input id="host" type="text" placeholder="192.168.1.1" />
-        </div>
-        <div class="field" style="max-width: 90px">
-          <label>Port</label>
-          <input id="port" type="text" value="22" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Username</label>
-        <input id="username" type="text" placeholder="root" />
-      </div>
-
-      <!-- Auth mode toggle -->
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tab-password" type="button">
-          Password
-        </button>
-        <button class="auth-tab" id="tab-key" type="button">Private Key</button>
-      </div>
-
-      <!-- Password section -->
-      <div id="auth-password">
-        <div class="field">
-          <label>Password</label>
-          <input id="password" type="password" placeholder="••••••••" />
-        </div>
-      </div>
-
-      <!-- Private key section -->
-      <div id="auth-key" style="display: none">
-        <div class="field">
-          <label
-            >Private Key
-            <span style="color: #484f58; font-size: 0.75em"
-              >(paste PEM content)</span
-            ></label
-          >
-          <textarea
-            id="keytext"
-            rows="6"
-            placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
-            style="font-family: monospace; font-size: 0.8rem; line-height: 1.4"
-          ></textarea>
-        </div>
-        <div class="field">
-          <label
-            >Passphrase
-            <span style="color: #484f58; font-size: 0.75em"
-              >(optional)</span
-            ></label
-          >
-          <input
-            id="passphrase"
-            type="password"
-            placeholder="leave blank if key is unencrypted"
-          />
-        </div>
-      </div>
-
-      <button id="connect-btn">Connect</button>
-      <div id="status"></div>
+    <!-- ── Tab bar (shown when sessions exist) ── -->
+    <div id="tab-bar">
+      <div id="tabs-container"></div>
+      <button id="new-tab-btn" title="New session">+</button>
     </div>
 
-    <!-- ── Terminal panel ── -->
-    <div id="terminal-panel">
-      <div id="topbar">
-        <span>Connected to <strong id="session-label"></strong></span>
-        <button id="disconnect-btn">Disconnect</button>
+    <!-- ── Terminal slots (shown when sessions exist) ── -->
+    <div id="terminal-area"></div>
+
+    <!-- ── Connect overlay (shown initially and when adding new session) ── -->
+    <div id="connect-overlay">
+      <div id="connect-panel">
+        <button id="cancel-new-btn" title="Cancel">✕</button>
+        <h1>&#9112; WebSSH</h1>
+
+        <div class="row">
+          <div class="field">
+            <label>Host</label>
+            <input id="host" type="text" placeholder="192.168.1.1" />
+          </div>
+          <div class="field" style="max-width: 90px">
+            <label>Port</label>
+            <input id="port" type="text" value="22" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Username</label>
+          <input id="username" type="text" placeholder="root" />
+        </div>
+
+        <div class="field">
+          <label>
+            Session Name
+            <span style="color: #484f58; font-size: 0.75em">(optional)</span>
+          </label>
+          <input id="session-name" type="text" placeholder="e.g. prod-server" />
+        </div>
+
+        <!-- Auth mode toggle -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-password" type="button">
+            Password
+          </button>
+          <button class="auth-tab" id="tab-key" type="button">
+            Private Key
+          </button>
+        </div>
+
+        <!-- Password section -->
+        <div id="auth-password">
+          <div class="field">
+            <label>Password</label>
+            <input id="password" type="password" placeholder="••••••••" />
+          </div>
+        </div>
+
+        <!-- Private key section -->
+        <div id="auth-key" style="display: none">
+          <div class="field">
+            <label>
+              Private Key
+              <span style="color: #484f58; font-size: 0.75em"
+                >(paste PEM content)</span
+              >
+            </label>
+            <textarea
+              id="keytext"
+              rows="6"
+              placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
+              style="font-family: monospace; font-size: 0.8rem; line-height: 1.4"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label>
+              Passphrase
+              <span style="color: #484f58; font-size: 0.75em">(optional)</span>
+            </label>
+            <input
+              id="passphrase"
+              type="password"
+              placeholder="leave blank if key is unencrypted"
+            />
+          </div>
+        </div>
+
+        <button id="connect-btn">Connect</button>
+        <div id="status"></div>
       </div>
-      <div id="terminal-container"></div>
     </div>
 
     <script>
@@ -336,11 +466,16 @@
         "use strict";
 
         /* ── DOM refs ── */
-        const connectPanel = document.getElementById("connect-panel");
-        const terminalPanel = document.getElementById("terminal-panel");
+        const tabBar = document.getElementById("tab-bar");
+        const tabsContainer = document.getElementById("tabs-container");
+        const newTabBtn = document.getElementById("new-tab-btn");
+        const terminalArea = document.getElementById("terminal-area");
+        const connectOverlay = document.getElementById("connect-overlay");
+        const cancelNewBtn = document.getElementById("cancel-new-btn");
         const hostInput = document.getElementById("host");
         const portInput = document.getElementById("port");
         const userInput = document.getElementById("username");
+        const sessionNameInput = document.getElementById("session-name");
         const passInput = document.getElementById("password");
         const tabPassword = document.getElementById("tab-password");
         const tabKey = document.getElementById("tab-key");
@@ -349,18 +484,18 @@
         const keyTextInput = document.getElementById("keytext");
         const passphraseInput = document.getElementById("passphrase");
         const connectBtn = document.getElementById("connect-btn");
-        const disconnectBtn = document.getElementById("disconnect-btn");
         const statusDiv = document.getElementById("status");
-        const sessionLabel = document.getElementById("session-label");
-        const termContainer = document.getElementById("terminal-container");
 
-        /* ── Terminal state ── */
-        let term, fitAddon, ws;
+        /* ── Session state ── */
+        // Map<id, {ws, term, fitAddon, resizeObserver, tabEl, slotEl, aesKey}>
+        const sessions = new Map();
+        let activeId = null;
+        let nextId = 0;
         let authMode = "password"; // 'password' | 'key'
 
         function setStatus(msg, cls) {
           statusDiv.textContent = msg;
-          statusDiv.className = "status-" + cls;
+          statusDiv.className = cls ? "status-" + cls : "";
         }
 
         /* ── Auth tab switching ── */
@@ -380,83 +515,184 @@
           authPassword.style.display = "none";
         });
 
-        /* ── WebSocket URL: always prefer WSS when served over HTTPS ── */
+        /* ── Connect overlay helpers ── */
+        function showConnectOverlay(cancellable) {
+          connectOverlay.classList.remove("hidden");
+          connectOverlay.classList.toggle("with-backdrop", cancellable);
+          cancelNewBtn.style.display = cancellable ? "" : "none";
+          sessionNameInput.value = "";
+          setStatus("", "");
+          connectBtn.disabled = false;
+        }
+
+        function hideConnectOverlay() {
+          connectOverlay.classList.add("hidden");
+        }
+
+        /* ── WebSocket URL ── */
         function buildWsUrl() {
           const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
           return proto + "//" + window.location.host + "/ws";
         }
 
-        /* ── Open connection ── */
-        async function connect() {
-          const host = hostInput.value.trim();
-          const port = portInput.value.trim() || "22";
-          const user = userInput.value.trim();
+        /* ── Crypto helpers (Web Crypto API + AES-256-GCM) ── */
 
-          if (!host || !user) {
-            setStatus("Host and Username are required.", "err");
-            return;
-          }
-
-          const payload = { host, port, username: user };
-
-          if (authMode === "key") {
-            const keyText = keyTextInput.value.trim();
-            if (!keyText) {
-              setStatus("Please paste a private key.", "err");
-              return;
-            }
-            payload.private_key = keyText;
-            payload.passphrase = passphraseInput.value;
-          } else {
-            payload.password = passInput.value;
-          }
-
-          setStatus("Connecting…", "info");
-          connectBtn.disabled = true;
-
-          ws = new WebSocket(buildWsUrl());
-          ws.binaryType = "arraybuffer";
-
-          ws.onopen = function () {
-            /* Send SSH config as the very first message */
-            ws.send(JSON.stringify(payload));
-            showTerminal(user, host, port);
-          };
-
-          ws.onmessage = function (ev) {
-            if (ev.data instanceof ArrayBuffer) {
-              term.write(new Uint8Array(ev.data));
-            } else {
-              /* text frame – usually an error message from the server */
-              term.write(ev.data);
-            }
-          };
-
-          ws.onclose = function (ev) {
-            if (term) term.write("\r\n\x1b[31m[connection closed]\x1b[0m\r\n");
-            disconnectBtn.disabled = false;
-          };
-
-          ws.onerror = function () {
-            if (terminalPanel.style.display !== "none") {
-              term.write("\r\n\x1b[31m[websocket error]\x1b[0m\r\n");
-            } else {
-              setStatus(
-                "WebSocket error – check server and TLS config.",
-                "err",
-              );
-              connectBtn.disabled = false;
-            }
-          };
+        function base64ToBytes(b64) {
+          return Uint8Array.from(atob(b64), function (c) {
+            return c.charCodeAt(0);
+          });
         }
 
-        /* ── Build the xterm.js terminal and wire up input ── */
-        function showTerminal(user, host, port) {
-          connectPanel.style.display = "none";
-          terminalPanel.style.display = "flex";
-          sessionLabel.textContent = user + "@" + host + ":" + port;
+        function bytesToBase64(bytes) {
+          return btoa(String.fromCharCode.apply(null, bytes));
+        }
 
-          term = new Terminal({
+        async function encryptMsg(aesKey, plaintext) {
+          const nonce = crypto.getRandomValues(new Uint8Array(12));
+          const ciphertext = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv: nonce },
+            aesKey,
+            plaintext,
+          );
+          const out = new Uint8Array(12 + ciphertext.byteLength);
+          out.set(nonce, 0);
+          out.set(new Uint8Array(ciphertext), 12);
+          return out;
+        }
+
+        async function decryptMsg(aesKey, data) {
+          return crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: data.slice(0, 12) },
+            aesKey,
+            data.slice(12),
+          );
+        }
+
+        /* Perform ECDH key exchange with the server.
+         * serverPubB64 – base64-encoded uncompressed P-256 point from server.
+         * ws            – the open WebSocket to send our public key on.
+         * Returns a non-extractable AES-256-GCM CryptoKey. */
+        async function doKeyExchange(ws, serverPubB64) {
+          /* Generate ephemeral ECDH key pair */
+          const kp = await crypto.subtle.generateKey(
+            { name: "ECDH", namedCurve: "P-256" },
+            false,
+            ["deriveBits"],
+          );
+
+          /* Send client public key to server (plain text frame) */
+          const clientPubBytes = await crypto.subtle.exportKey("raw", kp.publicKey);
+          ws.send(
+            JSON.stringify({
+              type: "key",
+              pub: bytesToBase64(new Uint8Array(clientPubBytes)),
+            }),
+          );
+
+          /* Import server public key */
+          const serverPub = await crypto.subtle.importKey(
+            "raw",
+            base64ToBytes(serverPubB64),
+            { name: "ECDH", namedCurve: "P-256" },
+            false,
+            [],
+          );
+
+          /* Derive shared bits */
+          const sharedBits = await crypto.subtle.deriveBits(
+            { name: "ECDH", public: serverPub },
+            kp.privateKey,
+            256,
+          );
+
+          /* HKDF-SHA256 → AES-256-GCM key  (must match Go side) */
+          const baseKey = await crypto.subtle.importKey(
+            "raw",
+            sharedBits,
+            { name: "HKDF" },
+            false,
+            ["deriveKey"],
+          );
+
+          return crypto.subtle.deriveKey(
+            {
+              name: "HKDF",
+              hash: "SHA-256",
+              salt: new TextEncoder().encode("webssh-session"),
+              info: new TextEncoder().encode("aes-256-gcm-key"),
+            },
+            baseKey,
+            { name: "AES-GCM", length: 256 },
+            false,
+            ["encrypt", "decrypt"],
+          );
+        }
+
+        /* ── Create a tab DOM element ── */
+        function createTabEl(id, label) {
+          const tab = document.createElement("div");
+          tab.className = "tab";
+          tab.dataset.id = id;
+
+          const labelEl = document.createElement("span");
+          labelEl.className = "tab-label";
+          labelEl.textContent = label;
+
+          const closeBtn = document.createElement("button");
+          closeBtn.className = "tab-close";
+          closeBtn.title = "Close session";
+          closeBtn.textContent = "×";
+          closeBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            closeSession(id);
+          });
+
+          tab.appendChild(labelEl);
+          tab.appendChild(closeBtn);
+          tab.addEventListener("click", function () {
+            switchTab(id);
+          });
+
+          tabsContainer.appendChild(tab);
+          return tab;
+        }
+
+        /* ── Create a terminal slot DOM element ── */
+        function createSlotEl(id) {
+          const slot = document.createElement("div");
+          slot.className = "terminal-slot";
+          slot.dataset.id = id;
+
+          const container = document.createElement("div");
+          container.className = "terminal-container";
+          slot.appendChild(container);
+
+          terminalArea.appendChild(slot);
+          return slot;
+        }
+
+        /* ── Switch active tab ── */
+        function switchTab(id) {
+          sessions.forEach(function (s) {
+            s.tabEl.classList.remove("active");
+            s.slotEl.classList.remove("active");
+          });
+          const s = sessions.get(id);
+          if (!s) return;
+          s.tabEl.classList.add("active");
+          s.slotEl.classList.add("active");
+          activeId = id;
+          /* Re-fit after becoming visible (was hidden before) */
+          if (s.fitAddon) s.fitAddon.fit();
+          if (s.term) s.term.focus();
+        }
+
+        /* ── Set up xterm.js in a slot ── */
+        function setupTerminal(id, user, host, port) {
+          const s = sessions.get(id);
+          if (!s) return;
+
+          const term = new Terminal({
             cursorBlink: true,
             fontSize: 14,
             fontFamily:
@@ -478,61 +714,268 @@
             },
           });
 
-          fitAddon = new FitAddon.FitAddon();
+          const fitAddon = new FitAddon.FitAddon();
           term.loadAddon(fitAddon);
-          term.open(termContainer);
+
+          const container = s.slotEl.querySelector(".terminal-container");
+          term.open(container);
           fitAddon.fit();
 
-          /* Forward keystrokes to SSH via WebSocket */
-          term.onData(function (data) {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              ws.send(new TextEncoder().encode(data));
-            }
-          });
-
-          /* Send resize events to the server */
-          term.onResize(function (size) {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              ws.send(
-                JSON.stringify({
-                  type: "resize",
-                  cols: size.cols,
-                  rows: size.rows,
-                }),
+          /* Forward keystrokes to SSH (encrypted) */
+          term.onData(async function (data) {
+            if (s.ws && s.ws.readyState === WebSocket.OPEN && s.aesKey) {
+              const enc = await encryptMsg(
+                s.aesKey,
+                new TextEncoder().encode(data),
               );
+              s.ws.send(enc);
             }
           });
 
-          /* Re-fit terminal when browser window is resized */
-          const resizeObserver = new ResizeObserver(() => fitAddon.fit());
-          resizeObserver.observe(termContainer);
+          /* Send resize events (encrypted) */
+          term.onResize(async function (size) {
+            if (s.ws && s.ws.readyState === WebSocket.OPEN && s.aesKey) {
+              const enc = await encryptMsg(
+                s.aesKey,
+                new TextEncoder().encode(
+                  JSON.stringify({
+                    type: "resize",
+                    cols: size.cols,
+                    rows: size.rows,
+                  }),
+                ),
+              );
+              s.ws.send(enc);
+            }
+          });
+
+          /* Re-fit on container resize */
+          const resizeObserver = new ResizeObserver(function () {
+            fitAddon.fit();
+          });
+          resizeObserver.observe(container);
+
+          s.term = term;
+          s.fitAddon = fitAddon;
+          s.resizeObserver = resizeObserver;
+
+          /* Update tab label – use custom name if set, else default */
+          s.tabEl.querySelector(".tab-label").textContent =
+            s.customName || user + "@" + host + ":" + port;
 
           term.focus();
         }
 
-        /* ── Disconnect ── */
-        function disconnect() {
-          if (ws) ws.close();
-          ws = null;
+        /* ── Open a new SSH session ── */
+        function connect() {
+          const host = hostInput.value.trim();
+          const port = portInput.value.trim() || "22";
+          const user = userInput.value.trim();
+          const customName = sessionNameInput.value.trim();
 
-          /* Tear down the terminal */
-          if (term) {
-            term.dispose();
-            term = null;
+          if (!host || !user) {
+            setStatus("Host and Username are required.", "err");
+            return;
           }
 
-          /* Back to connect form */
-          terminalPanel.style.display = "none";
-          connectPanel.style.display = "block";
-          connectBtn.disabled = false;
-          setStatus("", "");
+          const payload = { host, port, username: user };
+
+          if (authMode === "key") {
+            const keyText = keyTextInput.value.trim();
+            if (!keyText) {
+              setStatus("Please paste a private key.", "err");
+              return;
+            }
+            payload.private_key = keyText;
+            payload.passphrase = passphraseInput.value;
+          } else {
+            payload.password = passInput.value;
+          }
+
+          setStatus("Connecting\u2026", "info");
+          connectBtn.disabled = true;
+
+          const id = nextId++;
+
+          /* Create tab (placeholder label until key exchange completes) */
+          const tabEl = createTabEl(id, customName || host + ":" + port);
+          const slotEl = createSlotEl(id);
+
+          sessions.set(id, {
+            ws: null,
+            term: null,
+            fitAddon: null,
+            resizeObserver: null,
+            tabEl: tabEl,
+            slotEl: slotEl,
+            aesKey: null, // set after key exchange
+            customName: customName,
+          });
+
+          /* Show workspace immediately */
+          tabBar.style.display = "flex";
+          terminalArea.style.display = "block";
+          switchTab(id);
+          hideConnectOverlay();
+
+          const ws = new WebSocket(buildWsUrl());
+          ws.binaryType = "arraybuffer";
+          sessions.get(id).ws = ws;
+
+          /* ws.onmessage handles both the key-exchange text frame (first) and
+           * all subsequent encrypted binary frames. */
+          ws.onmessage = async function (ev) {
+            const s = sessions.get(id);
+            if (!s) return;
+
+            /* ── Key exchange (server sends a plain text frame first) ── */
+            if (!(ev.data instanceof ArrayBuffer)) {
+              if (s.aesKey) return; // already done
+              let serverKeyMsg;
+              try {
+                serverKeyMsg = JSON.parse(ev.data);
+              } catch (e) {
+                return;
+              }
+              if (serverKeyMsg.type !== "key") return;
+
+              try {
+                const aesKey = await doKeyExchange(ws, serverKeyMsg.pub);
+                s.aesKey = aesKey;
+
+                /* Send encrypted SSH config */
+                const enc = await encryptMsg(
+                  aesKey,
+                  new TextEncoder().encode(JSON.stringify(payload)),
+                );
+                ws.send(enc);
+
+                /* Now that encryption is ready, set up the terminal */
+                setupTerminal(id, user, host, port);
+              } catch (e) {
+                closeSession(id);
+                showConnectOverlay(sessions.size > 0);
+                setStatus("Key exchange failed.", "err");
+              }
+              return;
+            }
+
+            /* ── Encrypted terminal data ── */
+            if (!s.aesKey || !s.term) return;
+            try {
+              const plain = await decryptMsg(s.aesKey, new Uint8Array(ev.data));
+              s.term.write(new Uint8Array(plain));
+            } catch (e) {
+              /* Authentication tag mismatch – something is wrong */
+              if (s.term) s.term.write("\r\n\x1b[31m[decrypt error]\x1b[0m\r\n");
+            }
+          };
+
+          ws.onclose = function () {
+            const s = sessions.get(id);
+            if (!s) return;
+            if (s.term) {
+              s.term.write("\r\n\x1b[31m[connection closed]\x1b[0m\r\n");
+            }
+            /* Auto-close the tab after a moment so any final output is visible */
+            setTimeout(function () {
+              closeSession(id);
+            }, 1500);
+          };
+
+          ws.onerror = function () {
+            const s = sessions.get(id);
+            if (!s) return;
+            if (s.term) {
+              s.term.write("\r\n\x1b[31m[websocket error]\x1b[0m\r\n");
+            } else {
+              closeSession(id);
+              showConnectOverlay(sessions.size > 0);
+              setStatus("Connection failed \u2013 check server/TLS.", "err");
+            }
+          };
         }
 
-        /* ── Event listeners ── */
-        connectBtn.addEventListener("click", connect);
-        disconnectBtn.addEventListener("click", disconnect);
+        /* ── Close a session (and clean up) ── */
+        function closeSession(id) {
+          const s = sessions.get(id);
+          if (!s) return;
 
-        /* Allow Enter key in the form to trigger connect */
+          /* Disconnect WebSocket */
+          if (s.ws) {
+            s.ws.onclose = null; /* suppress post-close handlers */
+            s.ws.close();
+          }
+
+          /* Dispose terminal */
+          if (s.resizeObserver) s.resizeObserver.disconnect();
+          if (s.term) s.term.dispose();
+
+          /* Remove DOM */
+          s.tabEl.remove();
+          s.slotEl.remove();
+          sessions.delete(id);
+
+          if (sessions.size === 0) {
+            tabBar.style.display = "none";
+            terminalArea.style.display = "none";
+            activeId = null;
+            showConnectOverlay(false);
+          } else if (activeId === id) {
+            const lastId = Array.from(sessions.keys()).pop();
+            switchTab(lastId);
+          }
+        }
+
+        /* ── Disconnect all sessions on page unload ── */
+        window.addEventListener("beforeunload", function () {
+          sessions.forEach(function (s) {
+            if (s.ws) s.ws.close();
+          });
+        });
+
+        /* ── Button and keyboard event listeners ── */
+        connectBtn.addEventListener("click", connect);
+
+        newTabBtn.addEventListener("click", function () {
+          showConnectOverlay(true);
+        });
+
+        cancelNewBtn.addEventListener("click", function () {
+          hideConnectOverlay();
+          if (activeId !== null) {
+            const s = sessions.get(activeId);
+            if (s && s.term) s.term.focus();
+          }
+        });
+
+        /* Close overlay with Escape key */
+        document.addEventListener("keydown", function (e) {
+          if (
+            e.key === "Escape" &&
+            !connectOverlay.classList.contains("hidden") &&
+            sessions.size > 0
+          ) {
+            hideConnectOverlay();
+            if (activeId !== null) {
+              const s = sessions.get(activeId);
+              if (s && s.term) s.term.focus();
+            }
+          }
+        });
+
+        /* Click on backdrop to close when sessions exist */
+        connectOverlay.addEventListener("click", function (e) {
+          if (e.target === connectOverlay && sessions.size > 0) {
+            hideConnectOverlay();
+            if (activeId !== null) {
+              const s = sessions.get(activeId);
+              if (s && s.term) s.term.focus();
+            }
+          }
+        });
+
+        /* Allow Enter in form fields to trigger connect */
         [hostInput, portInput, userInput, passInput, passphraseInput].forEach(
           function (el) {
             el.addEventListener("keydown", function (e) {
