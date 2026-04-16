@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSSH</title>
+
+    <!-- xterm.js (self-hosted v6.0.0) -->
+    <link rel="stylesheet" href="vendor/xterm.css" />
+    <script src="vendor/xterm.js"></script>
+    <script src="vendor/addon-fit.js"></script>
+
+    <style>
+      @font-face {
+        font-family: "MonaspiceAr Nerd Font Mono";
+        src: url("vendor/fonts/MonaspiceArNerdFontMono-Regular.otf")
+          format("opentype");
+        font-weight: 400;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "MonaspiceAr Nerd Font Mono";
+        src: url("vendor/fonts/MonaspiceArNerdFontMono-Bold.otf")
+          format("opentype");
+        font-weight: 700;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "MonaspiceAr Nerd Font Mono";
+        src: url("vendor/fonts/MonaspiceArNerdFontMono-Italic.otf")
+          format("opentype");
+        font-weight: 400;
+        font-style: italic;
+      }
+
+      @font-face {
+        font-family: "MonaspiceAr Nerd Font Mono";
+        src: url("vendor/fonts/MonaspiceArNerdFontMono-BoldItalic.otf")
+          format("opentype");
+        font-weight: 700;
+        font-style: italic;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: #0d1117;
+        color: #c9d1d9;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* ── Connect form ── */
+      #connect-panel {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 10px;
+        padding: 2rem 2.5rem;
+        width: 380px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      #connect-panel h1 {
+        font-size: 1.4rem;
+        margin-bottom: 1.4rem;
+        color: #58a6ff;
+        letter-spacing: 0.05em;
+      }
+
+      /* ── Auth mode tabs ── */
+      .auth-tabs {
+        display: flex;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+      }
+
+      .auth-tab {
+        flex: 1;
+        padding: 0.4rem 0;
+        background: #0d1117;
+        border: none;
+        color: #8b949e;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        letter-spacing: 0.04em;
+      }
+
+      .auth-tab:not(:last-child) {
+        border-right: 1px solid #30363d;
+      }
+
+      .auth-tab.active {
+        background: #1f6feb;
+        color: #fff;
+      }
+
+      .auth-tab:hover:not(.active) {
+        background: #21262d;
+        color: #c9d1d9;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1rem;
+      }
+
+      .field label {
+        font-size: 0.78rem;
+        color: #8b949e;
+        margin-bottom: 0.3rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .field input,
+      .field textarea {
+        width: 100%;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        color: #c9d1d9;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.15s;
+        font-family: inherit;
+        resize: none;
+      }
+
+      .field input:focus,
+      .field textarea:focus {
+        border-color: #58a6ff;
+      }
+
+      .row {
+        display: flex;
+        gap: 0.75rem;
+      }
+
+      .row .field {
+        flex: 1;
+      }
+
+      #connect-btn {
+        width: 100%;
+        margin-top: 0.5rem;
+        padding: 0.6rem;
+        background: #238636;
+        border: none;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      #connect-btn:hover {
+        background: #2ea043;
+      }
+
+      #connect-btn:active {
+        background: #1a7f37;
+      }
+
+      #status {
+        margin-top: 0.75rem;
+        font-size: 0.85rem;
+        min-height: 1.2em;
+        text-align: center;
+      }
+
+      .status-err {
+        color: #f85149;
+      }
+
+      .status-ok {
+        color: #3fb950;
+      }
+
+      .status-info {
+        color: #58a6ff;
+      }
+
+      /* ── Terminal panel ── */
+      #terminal-panel {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        height: 100vh;
+        padding: 0;
+      }
+
+      #topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #161b22;
+        border-bottom: 1px solid #30363d;
+        padding: 0.45rem 1rem;
+        flex-shrink: 0;
+      }
+
+      #topbar span {
+        font-size: 0.85rem;
+        color: #8b949e;
+      }
+
+      #topbar strong {
+        color: #c9d1d9;
+      }
+
+      #disconnect-btn {
+        background: #da3633;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        padding: 0.3rem 0.8rem;
+        cursor: pointer;
+        font-size: 0.82rem;
+        transition: background 0.15s;
+      }
+
+      #disconnect-btn:hover {
+        background: #f85149;
+      }
+
+      #terminal-container {
+        flex: 1;
+        padding: 4px;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ── Connect form ── -->
+    <div id="connect-panel">
+      <h1>&#9112; WebSSH</h1>
+
+      <div class="row">
+        <div class="field">
+          <label>Host</label>
+          <input id="host" type="text" placeholder="192.168.1.1" />
+        </div>
+        <div class="field" style="max-width: 90px">
+          <label>Port</label>
+          <input id="port" type="text" value="22" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Username</label>
+        <input id="username" type="text" placeholder="root" />
+      </div>
+
+      <!-- Auth mode toggle -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-password" type="button">
+          Password
+        </button>
+        <button class="auth-tab" id="tab-key" type="button">Private Key</button>
+      </div>
+
+      <!-- Password section -->
+      <div id="auth-password">
+        <div class="field">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="••••••••" />
+        </div>
+      </div>
+
+      <!-- Private key section -->
+      <div id="auth-key" style="display: none">
+        <div class="field">
+          <label
+            >Private Key
+            <span style="color: #484f58; font-size: 0.75em"
+              >(paste PEM content)</span
+            ></label
+          >
+          <textarea
+            id="keytext"
+            rows="6"
+            placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
+            style="font-family: monospace; font-size: 0.8rem; line-height: 1.4"
+          ></textarea>
+        </div>
+        <div class="field">
+          <label
+            >Passphrase
+            <span style="color: #484f58; font-size: 0.75em"
+              >(optional)</span
+            ></label
+          >
+          <input
+            id="passphrase"
+            type="password"
+            placeholder="leave blank if key is unencrypted"
+          />
+        </div>
+      </div>
+
+      <button id="connect-btn">Connect</button>
+      <div id="status"></div>
+    </div>
+
+    <!-- ── Terminal panel ── -->
+    <div id="terminal-panel">
+      <div id="topbar">
+        <span>Connected to <strong id="session-label"></strong></span>
+        <button id="disconnect-btn">Disconnect</button>
+      </div>
+      <div id="terminal-container"></div>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        /* ── DOM refs ── */
+        const connectPanel = document.getElementById("connect-panel");
+        const terminalPanel = document.getElementById("terminal-panel");
+        const hostInput = document.getElementById("host");
+        const portInput = document.getElementById("port");
+        const userInput = document.getElementById("username");
+        const passInput = document.getElementById("password");
+        const tabPassword = document.getElementById("tab-password");
+        const tabKey = document.getElementById("tab-key");
+        const authPassword = document.getElementById("auth-password");
+        const authKey = document.getElementById("auth-key");
+        const keyTextInput = document.getElementById("keytext");
+        const passphraseInput = document.getElementById("passphrase");
+        const connectBtn = document.getElementById("connect-btn");
+        const disconnectBtn = document.getElementById("disconnect-btn");
+        const statusDiv = document.getElementById("status");
+        const sessionLabel = document.getElementById("session-label");
+        const termContainer = document.getElementById("terminal-container");
+
+        /* ── Terminal state ── */
+        let term, fitAddon, ws;
+        let authMode = "password"; // 'password' | 'key'
+
+        function setStatus(msg, cls) {
+          statusDiv.textContent = msg;
+          statusDiv.className = "status-" + cls;
+        }
+
+        /* ── Auth tab switching ── */
+        tabPassword.addEventListener("click", function () {
+          authMode = "password";
+          tabPassword.classList.add("active");
+          tabKey.classList.remove("active");
+          authPassword.style.display = "";
+          authKey.style.display = "none";
+        });
+
+        tabKey.addEventListener("click", function () {
+          authMode = "key";
+          tabKey.classList.add("active");
+          tabPassword.classList.remove("active");
+          authKey.style.display = "";
+          authPassword.style.display = "none";
+        });
+
+        /* ── WebSocket URL: always prefer WSS when served over HTTPS ── */
+        function buildWsUrl() {
+          const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+          return proto + "//" + window.location.host + "/ws";
+        }
+
+        /* ── Open connection ── */
+        async function connect() {
+          const host = hostInput.value.trim();
+          const port = portInput.value.trim() || "22";
+          const user = userInput.value.trim();
+
+          if (!host || !user) {
+            setStatus("Host and Username are required.", "err");
+            return;
+          }
+
+          const payload = { host, port, username: user };
+
+          if (authMode === "key") {
+            const keyText = keyTextInput.value.trim();
+            if (!keyText) {
+              setStatus("Please paste a private key.", "err");
+              return;
+            }
+            payload.private_key = keyText;
+            payload.passphrase = passphraseInput.value;
+          } else {
+            payload.password = passInput.value;
+          }
+
+          setStatus("Connecting…", "info");
+          connectBtn.disabled = true;
+
+          ws = new WebSocket(buildWsUrl());
+          ws.binaryType = "arraybuffer";
+
+          ws.onopen = function () {
+            /* Send SSH config as the very first message */
+            ws.send(JSON.stringify(payload));
+            showTerminal(user, host, port);
+          };
+
+          ws.onmessage = function (ev) {
+            if (ev.data instanceof ArrayBuffer) {
+              term.write(new Uint8Array(ev.data));
+            } else {
+              /* text frame – usually an error message from the server */
+              term.write(ev.data);
+            }
+          };
+
+          ws.onclose = function (ev) {
+            if (term) term.write("\r\n\x1b[31m[connection closed]\x1b[0m\r\n");
+            disconnectBtn.disabled = false;
+          };
+
+          ws.onerror = function () {
+            if (terminalPanel.style.display !== "none") {
+              term.write("\r\n\x1b[31m[websocket error]\x1b[0m\r\n");
+            } else {
+              setStatus(
+                "WebSocket error – check server and TLS config.",
+                "err",
+              );
+              connectBtn.disabled = false;
+            }
+          };
+        }
+
+        /* ── Build the xterm.js terminal and wire up input ── */
+        function showTerminal(user, host, port) {
+          connectPanel.style.display = "none";
+          terminalPanel.style.display = "flex";
+          sessionLabel.textContent = user + "@" + host + ":" + port;
+
+          term = new Terminal({
+            cursorBlink: true,
+            fontSize: 14,
+            fontFamily:
+              "'MonaspiceAr Nerd Font Mono', 'JetBrains Mono', 'Fira Code', monospace",
+            theme: {
+              background: "#0d1117",
+              foreground: "#c9d1d9",
+              cursor: "#58a6ff",
+              black: "#484f58",
+              red: "#ff7b72",
+              green: "#3fb950",
+              yellow: "#d29922",
+              blue: "#58a6ff",
+              magenta: "#bc8cff",
+              cyan: "#39c5cf",
+              white: "#b1bac4",
+              brightBlack: "#6e7681",
+              brightWhite: "#ffffff",
+            },
+          });
+
+          fitAddon = new FitAddon.FitAddon();
+          term.loadAddon(fitAddon);
+          term.open(termContainer);
+          fitAddon.fit();
+
+          /* Forward keystrokes to SSH via WebSocket */
+          term.onData(function (data) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(new TextEncoder().encode(data));
+            }
+          });
+
+          /* Send resize events to the server */
+          term.onResize(function (size) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(
+                JSON.stringify({
+                  type: "resize",
+                  cols: size.cols,
+                  rows: size.rows,
+                }),
+              );
+            }
+          });
+
+          /* Re-fit terminal when browser window is resized */
+          const resizeObserver = new ResizeObserver(() => fitAddon.fit());
+          resizeObserver.observe(termContainer);
+
+          term.focus();
+        }
+
+        /* ── Disconnect ── */
+        function disconnect() {
+          if (ws) ws.close();
+          ws = null;
+
+          /* Tear down the terminal */
+          if (term) {
+            term.dispose();
+            term = null;
+          }
+
+          /* Back to connect form */
+          terminalPanel.style.display = "none";
+          connectPanel.style.display = "block";
+          connectBtn.disabled = false;
+          setStatus("", "");
+        }
+
+        /* ── Event listeners ── */
+        connectBtn.addEventListener("click", connect);
+        disconnectBtn.addEventListener("click", disconnect);
+
+        /* Allow Enter key in the form to trigger connect */
+        [hostInput, portInput, userInput, passInput, passphraseInput].forEach(
+          function (el) {
+            el.addEventListener("keydown", function (e) {
+              if (e.key === "Enter") connect();
+            });
+          },
+        );
+      })();
+    </script>
+  </body>
+</html>
