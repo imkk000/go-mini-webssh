@@ -99,3 +99,4 @@ go run main.go -cert x.crt -key x.key  # TLS
 - **Auto-disconnect**: `beforeunload` closes all WebSockets; `exit` in terminal auto-closes tab after 1.5s
 - **End-to-end encryption**: ECDH + AES-256-GCM on every session (see Security layer above)
 - **Session name**: optional custom label in the connect form; falls back to `user@host:port`
+- **Clear form button**: "Clear" button next to "Connect" resets all fields (host, port→22, username, password, key, passphrase, session name) and switches auth tab back to Password

@@ -12,6 +12,7 @@ A lightweight, web-based SSH terminal client written in Go.
 - **End-to-end encryption** - Every WebSocket session is protected with ECDH P-256 key exchange + AES-256-GCM; traffic is unreadable even in browser DevTools
 - **Terminal resizing** - Automatic resize when the browser window changes
 - **TLS/HTTPS support** - Optional TLS with `-cert`/`-key` flags for HTTPS/WSS
+- **Clear form** - One-click button to reset all connection fields back to defaults
 - **Auto-disconnect** - Sessions are closed cleanly when a tab is closed, the page is unloaded, or the remote shell exits
 - **xterm.js v6** - Self-hosted terminal emulator, no external CDN dependencies
 - **Nerd Font support** - Ships with Monaspace Argon Nerd Font Mono for icon rendering

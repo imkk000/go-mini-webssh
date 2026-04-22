@@ -327,9 +327,14 @@
         flex: 1;
       }
 
-      #connect-btn {
-        width: 100%;
+      .connect-actions {
+        display: flex;
+        gap: 0.5rem;
         margin-top: 0.5rem;
+      }
+
+      #connect-btn {
+        flex: 1;
         padding: 0.6rem;
         background: #238636;
         border: none;
@@ -346,6 +351,22 @@
 
       #connect-btn:active {
         background: #1a7f37;
+      }
+
+      #clear-btn {
+        padding: 0.6rem 1rem;
+        background: #21262d;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        color: #8b949e;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+      }
+
+      #clear-btn:hover {
+        background: #30363d;
+        color: #e6edf3;
       }
 
       #status {
@@ -456,7 +477,10 @@
           </div>
         </div>
 
-        <button id="connect-btn">Connect</button>
+        <div class="connect-actions">
+          <button id="connect-btn">Connect</button>
+          <button id="clear-btn" title="Clear form">Clear</button>
+        </div>
         <div id="status"></div>
       </div>
     </div>
@@ -936,6 +960,22 @@
 
         /* ── Button and keyboard event listeners ── */
         connectBtn.addEventListener("click", connect);
+
+        document.getElementById("clear-btn").addEventListener("click", function () {
+          hostInput.value = "";
+          portInput.value = "22";
+          userInput.value = "";
+          passInput.value = "";
+          keyTextInput.value = "";
+          passphraseInput.value = "";
+          sessionNameInput.value = "";
+          authPassword.style.display = "";
+          authKey.style.display = "none";
+          tabPassword.classList.add("active");
+          tabKey.classList.remove("active");
+          setStatus("", "");
+          hostInput.focus();
+        });
 
         newTabBtn.addEventListener("click", function () {
           showConnectOverlay(true);
