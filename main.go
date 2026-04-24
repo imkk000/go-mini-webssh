@@ -354,6 +354,28 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	go copyToWS(sshOut)
 	go copyToWS(sshErr)
 
+	// ── WebSocket ping keepalive ─────────────────────────────────────────────
+	// Sends a ping every 30 s so nginx proxy_read_timeout doesn't kill idle sessions.
+	pingStop := make(chan struct{})
+	wsConn.SetPongHandler(func(string) error { return nil })
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				sw.mu.Lock()
+				err := wsConn.WriteMessage(websocket.PingMessage, nil)
+				sw.mu.Unlock()
+				if err != nil {
+					return
+				}
+			case <-pingStop:
+				return
+			}
+		}
+	}()
+
 	// ── 7. Pipe WebSocket → SSH (decrypt then forward) ───────────────────────
 	for {
 		_, encData, err := wsConn.ReadMessage()
@@ -383,6 +405,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 
 	sshIn.Close()
 	<-done
+	close(pingStop)
 	log.Printf("session closed: %s@%s", cfg.Username, addr)
 }
 

@@ -43,6 +43,57 @@
         font-style: italic;
       }
 
+      /* ── Theme tokens ── */
+      :root {
+        --bg-primary: #0d1117;
+        --bg-secondary: #161b22;
+        --bg-tertiary: #21262d;
+        --bg-input: #0d1117;
+        --border: #30363d;
+        --text-primary: #c9d1d9;
+        --text-secondary: #8b949e;
+        --text-muted: #6e7681;
+        --text-hint: #484f58;
+        --text-bright: #e6edf3;
+        --accent: #58a6ff;
+        --accent-btn: #1f6feb;
+        --red: #f85149;
+        --red-bg: rgba(248, 81, 73, 0.15);
+        --red-bg-soft: rgba(248, 81, 73, 0.12);
+        --green: #3fb950;
+        --green-btn: #238636;
+        --green-btn-hover: #2ea043;
+        --green-btn-active: #1a7f37;
+        --overlay-bg: #0d1117;
+        --overlay-backdrop: rgba(13, 17, 23, 0.82);
+        --panel-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      :root[data-theme="light"] {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f6f8fa;
+        --bg-tertiary: #eaeef2;
+        --bg-input: #ffffff;
+        --border: #d0d7de;
+        --text-primary: #24292f;
+        --text-secondary: #57606a;
+        --text-muted: #6e7781;
+        --text-hint: #8c959f;
+        --text-bright: #24292f;
+        --accent: #0969da;
+        --accent-btn: #0969da;
+        --red: #cf222e;
+        --red-bg: rgba(207, 34, 46, 0.15);
+        --red-bg-soft: rgba(207, 34, 46, 0.12);
+        --green: #1a7f37;
+        --green-btn: #1a7f37;
+        --green-btn-hover: #2da44e;
+        --green-btn-active: #116329;
+        --overlay-bg: #ffffff;
+        --overlay-backdrop: rgba(246, 248, 250, 0.85);
+        --panel-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      }
+
       *,
       *::before,
       *::after {
@@ -53,8 +104,8 @@
 
       body {
         font-family: "Segoe UI", system-ui, sans-serif;
-        background: #0d1117;
-        color: #c9d1d9;
+        background: var(--bg-primary);
+        color: var(--text-primary);
         height: 100vh;
         display: flex;
         flex-direction: column;
@@ -64,8 +115,8 @@
       #tab-bar {
         display: none;
         align-items: center;
-        background: #161b22;
-        border-bottom: 1px solid #30363d;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
         height: 36px;
         flex-shrink: 0;
         overflow: hidden;
@@ -91,8 +142,8 @@
         height: 100%;
         background: transparent;
         border: none;
-        border-right: 1px solid #30363d;
-        color: #8b949e;
+        border-right: 1px solid var(--border);
+        color: var(--text-secondary);
         font-size: 0.8rem;
         cursor: pointer;
         white-space: nowrap;
@@ -102,19 +153,19 @@
       }
 
       .tab.active {
-        background: #0d1117;
-        color: #c9d1d9;
-        border-top-color: #58a6ff;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        border-top-color: var(--accent);
       }
 
       .tab:hover:not(.active) {
-        background: #21262d;
-        color: #c9d1d9;
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
       }
 
       .tab.disconnected .tab-label::after {
         content: " ●";
-        color: #f85149;
+        color: var(--red);
         font-size: 0.65rem;
       }
 
@@ -131,7 +182,7 @@
         justify-content: center;
         background: none;
         border: none;
-        color: #6e7681;
+        color: var(--text-muted);
         font-size: 13px;
         line-height: 1;
         cursor: pointer;
@@ -141,16 +192,16 @@
       }
 
       .tab-close:hover {
-        color: #f85149;
-        background: rgba(248, 81, 73, 0.15);
+        color: var(--red);
+        background: var(--red-bg);
       }
 
       #new-tab-btn {
         flex-shrink: 0;
         background: none;
         border: none;
-        border-left: 1px solid #30363d;
-        color: #8b949e;
+        border-left: 1px solid var(--border);
+        color: var(--text-secondary);
         font-size: 20px;
         line-height: 1;
         cursor: pointer;
@@ -160,8 +211,49 @@
       }
 
       #new-tab-btn:hover {
-        color: #c9d1d9;
-        background: #21262d;
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
+      }
+
+      /* ── Theme toggle button ── */
+      #theme-toggle-btn {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        border-left: 1px solid var(--border);
+        color: var(--text-secondary);
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0 12px;
+        height: 100%;
+        transition: background 0.1s, color 0.1s;
+      }
+
+      #theme-toggle-btn:hover {
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
+      }
+
+      /* Floating theme toggle (visible on connect screen) */
+      #theme-toggle-float {
+        position: fixed;
+        top: 10px;
+        right: 12px;
+        z-index: 150;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-secondary);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 5px 10px;
+        transition: background 0.15s, color 0.15s;
+      }
+
+      #theme-toggle-float:hover {
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
       }
 
       /* ── Terminal area ── */
@@ -197,11 +289,11 @@
         align-items: center;
         justify-content: center;
         z-index: 100;
-        background: #0d1117;
+        background: var(--overlay-bg);
       }
 
       #connect-overlay.with-backdrop {
-        background: rgba(13, 17, 23, 0.82);
+        background: var(--overlay-backdrop);
       }
 
       #connect-overlay.hidden {
@@ -210,19 +302,19 @@
 
       /* ── Connect form ── */
       #connect-panel {
-        background: #161b22;
-        border: 1px solid #30363d;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
         border-radius: 10px;
         padding: 2rem 2.5rem;
         width: 380px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        box-shadow: var(--panel-shadow);
         position: relative;
       }
 
       #connect-panel h1 {
         font-size: 1.4rem;
         margin-bottom: 1.4rem;
-        color: #58a6ff;
+        color: var(--accent);
         letter-spacing: 0.05em;
       }
 
@@ -233,7 +325,7 @@
         right: 0.7rem;
         background: none;
         border: none;
-        color: #6e7681;
+        color: var(--text-muted);
         font-size: 1rem;
         cursor: pointer;
         padding: 3px 7px;
@@ -243,14 +335,14 @@
       }
 
       #cancel-new-btn:hover {
-        color: #f85149;
-        background: rgba(248, 81, 73, 0.12);
+        color: var(--red);
+        background: var(--red-bg-soft);
       }
 
       /* ── Auth mode tabs ── */
       .auth-tabs {
         display: flex;
-        border: 1px solid #30363d;
+        border: 1px solid var(--border);
         border-radius: 6px;
         overflow: hidden;
         margin-bottom: 1rem;
@@ -259,9 +351,9 @@
       .auth-tab {
         flex: 1;
         padding: 0.4rem 0;
-        background: #0d1117;
+        background: var(--bg-input);
         border: none;
-        color: #8b949e;
+        color: var(--text-secondary);
         font-size: 0.82rem;
         cursor: pointer;
         transition:
@@ -271,17 +363,17 @@
       }
 
       .auth-tab:not(:last-child) {
-        border-right: 1px solid #30363d;
+        border-right: 1px solid var(--border);
       }
 
       .auth-tab.active {
-        background: #1f6feb;
+        background: var(--accent-btn);
         color: #fff;
       }
 
       .auth-tab:hover:not(.active) {
-        background: #21262d;
-        color: #c9d1d9;
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
       }
 
       .field {
@@ -292,7 +384,7 @@
 
       .field label {
         font-size: 0.78rem;
-        color: #8b949e;
+        color: var(--text-secondary);
         margin-bottom: 0.3rem;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -301,11 +393,11 @@
       .field input,
       .field textarea {
         width: 100%;
-        background: #0d1117;
-        border: 1px solid #30363d;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
         border-radius: 6px;
         padding: 0.5rem 0.75rem;
-        color: #c9d1d9;
+        color: var(--text-primary);
         font-size: 0.95rem;
         outline: none;
         transition: border-color 0.15s;
@@ -315,7 +407,7 @@
 
       .field input:focus,
       .field textarea:focus {
-        border-color: #58a6ff;
+        border-color: var(--accent);
       }
 
       .row {
@@ -336,7 +428,7 @@
       #connect-btn {
         flex: 1;
         padding: 0.6rem;
-        background: #238636;
+        background: var(--green-btn);
         border: none;
         border-radius: 6px;
         color: #fff;
@@ -346,27 +438,27 @@
       }
 
       #connect-btn:hover {
-        background: #2ea043;
+        background: var(--green-btn-hover);
       }
 
       #connect-btn:active {
-        background: #1a7f37;
+        background: var(--green-btn-active);
       }
 
       #clear-btn {
         padding: 0.6rem 1rem;
-        background: #21262d;
-        border: 1px solid #30363d;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
         border-radius: 6px;
-        color: #8b949e;
+        color: var(--text-secondary);
         font-size: 1rem;
         cursor: pointer;
         transition: background 0.15s, color 0.15s;
       }
 
       #clear-btn:hover {
-        background: #30363d;
-        color: #e6edf3;
+        background: var(--border);
+        color: var(--text-bright);
       }
 
       #status {
@@ -377,15 +469,15 @@
       }
 
       .status-err {
-        color: #f85149;
+        color: var(--red);
       }
 
       .status-ok {
-        color: #3fb950;
+        color: var(--green);
       }
 
       .status-info {
-        color: #58a6ff;
+        color: var(--accent);
       }
     </style>
   </head>
@@ -395,6 +487,7 @@
     <div id="tab-bar">
       <div id="tabs-container"></div>
       <button id="new-tab-btn" title="New session">+</button>
+      <button id="theme-toggle-btn" title="Switch to light theme">☀</button>
     </div>
 
     <!-- ── Terminal slots (shown when sessions exist) ── -->
@@ -425,7 +518,7 @@
         <div class="field">
           <label>
             Session Name
-            <span style="color: #484f58; font-size: 0.75em">(optional)</span>
+            <span style="color: var(--text-hint); font-size: 0.75em">(optional)</span>
           </label>
           <input id="session-name" type="text" placeholder="e.g. prod-server" />
         </div>
@@ -453,7 +546,7 @@
           <div class="field">
             <label>
               Private Key
-              <span style="color: #484f58; font-size: 0.75em"
+              <span style="color: var(--text-hint); font-size: 0.75em"
                 >(paste PEM content)</span
               >
             </label>
@@ -467,7 +560,7 @@
           <div class="field">
             <label>
               Passphrase
-              <span style="color: #484f58; font-size: 0.75em">(optional)</span>
+              <span style="color: var(--text-hint); font-size: 0.75em">(optional)</span>
             </label>
             <input
               id="passphrase"
@@ -484,6 +577,9 @@
         <div id="status"></div>
       </div>
     </div>
+
+    <!-- Floating theme toggle (visible on connect screen before any session) -->
+    <button id="theme-toggle-float" title="Switch to light theme">☀</button>
 
     <script>
       (function () {
@@ -509,6 +605,8 @@
         const passphraseInput = document.getElementById("passphrase");
         const connectBtn = document.getElementById("connect-btn");
         const statusDiv = document.getElementById("status");
+        const themeToggleBtn = document.getElementById("theme-toggle-btn");
+        const themeToggleFloat = document.getElementById("theme-toggle-float");
 
         /* ── Session state ── */
         // Map<id, {ws, term, fitAddon, resizeObserver, tabEl, slotEl, aesKey}>
@@ -521,6 +619,75 @@
           statusDiv.textContent = msg;
           statusDiv.className = cls ? "status-" + cls : "";
         }
+
+        /* ── Theme management ── */
+        const TERMINAL_THEMES = {
+          dark: {
+            background: "#0d1117",
+            foreground: "#c9d1d9",
+            cursor: "#58a6ff",
+            black: "#484f58",
+            red: "#ff7b72",
+            green: "#3fb950",
+            yellow: "#d29922",
+            blue: "#58a6ff",
+            magenta: "#bc8cff",
+            cyan: "#39c5cf",
+            white: "#b1bac4",
+            brightBlack: "#6e7681",
+            brightWhite: "#ffffff",
+          },
+          light: {
+            background: "#ffffff",
+            foreground: "#1f2328",
+            cursor: "#0969da",
+            black: "#57606a",
+            red: "#cf222e",
+            green: "#1a7f37",
+            yellow: "#9a6700",
+            blue: "#0969da",
+            magenta: "#8250df",
+            cyan: "#0a3069",
+            white: "#6e7781",
+            brightBlack: "#8c959f",
+            brightWhite: "#1f2328",
+          },
+        };
+
+        let currentTheme = localStorage.getItem("webssh-theme") || "dark";
+
+        function applyTheme(theme) {
+          currentTheme = theme;
+          if (theme === "light") {
+            document.documentElement.setAttribute("data-theme", "light");
+          } else {
+            document.documentElement.removeAttribute("data-theme");
+          }
+          const icon = theme === "dark" ? "☀" : "🌙";
+          const title = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
+          themeToggleBtn.textContent = icon;
+          themeToggleBtn.title = title;
+          themeToggleFloat.textContent = icon;
+          themeToggleFloat.title = title;
+
+          /* Update all open terminals */
+          const termTheme = TERMINAL_THEMES[theme];
+          sessions.forEach(function (s) {
+            if (s.term) s.term.options.theme = termTheme;
+          });
+
+          localStorage.setItem("webssh-theme", theme);
+        }
+
+        function toggleTheme() {
+          applyTheme(currentTheme === "dark" ? "light" : "dark");
+        }
+
+        themeToggleBtn.addEventListener("click", toggleTheme);
+        themeToggleFloat.addEventListener("click", toggleTheme);
+
+        /* Apply saved theme immediately */
+        applyTheme(currentTheme);
 
         /* ── Auth tab switching ── */
         tabPassword.addEventListener("click", function () {
@@ -544,6 +711,8 @@
           connectOverlay.classList.remove("hidden");
           connectOverlay.classList.toggle("with-backdrop", cancellable);
           cancelNewBtn.style.display = cancellable ? "" : "none";
+          /* Hide float toggle when tab bar is visible (it has the tab-bar toggle) */
+          themeToggleFloat.style.display = cancellable ? "none" : "";
           sessionNameInput.value = "";
           setStatus("", "");
           connectBtn.disabled = false;
@@ -721,21 +890,7 @@
             fontSize: 14,
             fontFamily:
               "'MonaspiceAr Nerd Font Mono', 'JetBrains Mono', 'Fira Code', monospace",
-            theme: {
-              background: "#0d1117",
-              foreground: "#c9d1d9",
-              cursor: "#58a6ff",
-              black: "#484f58",
-              red: "#ff7b72",
-              green: "#3fb950",
-              yellow: "#d29922",
-              blue: "#58a6ff",
-              magenta: "#bc8cff",
-              cyan: "#39c5cf",
-              white: "#b1bac4",
-              brightBlack: "#6e7681",
-              brightWhite: "#ffffff",
-            },
+            theme: TERMINAL_THEMES[currentTheme],
           });
 
           const fitAddon = new FitAddon.FitAddon();
@@ -839,6 +994,7 @@
           /* Show workspace immediately */
           tabBar.style.display = "flex";
           terminalArea.style.display = "block";
+          themeToggleFloat.style.display = "none";
           switchTab(id);
           hideConnectOverlay();
 
@@ -956,6 +1112,32 @@
           sessions.forEach(function (s) {
             if (s.ws) s.ws.close();
           });
+        });
+
+        /* ── Re-fit terminal when returning from another app (iPad / mobile) ──
+         * iOS/iPadOS pauses layout when you switch apps. On return the viewport
+         * may have changed but ResizeObserver doesn't reliably fire. We listen
+         * for visibilitychange and window focus, then re-fit after a short delay
+         * to let the browser finish compositing the new viewport dimensions. */
+        function refitActive() {
+          if (activeId === null) return;
+          const s = sessions.get(activeId);
+          if (s && s.fitAddon) s.fitAddon.fit();
+        }
+
+        document.addEventListener("visibilitychange", function () {
+          if (document.visibilityState === "visible") {
+            setTimeout(refitActive, 100);
+          }
+        });
+
+        window.addEventListener("focus", function () {
+          setTimeout(refitActive, 100);
+        });
+
+        /* pageshow covers iOS back-forward cache restores */
+        window.addEventListener("pageshow", function () {
+          setTimeout(refitActive, 100);
         });
 
         /* ── Button and keyboard event listeners ── */

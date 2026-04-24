@@ -92,7 +92,33 @@ go run main.go -addr :3000  # custom port
 go run main.go -cert x.crt -key x.key  # TLS
 ```
 
-## What has been built in this conversation
+## WebSocket keepalive (important for nginx deployments)
+
+`main.go` runs a goroutine per session that sends a **WebSocket ping frame every 30 seconds** and a matching pong handler. This prevents nginx (and other reverse proxies) from closing idle connections.
+
+**Common mistake**: setting nginx `keepalive_timeout` to a long value has no effect on WebSocket proxy sessions. The relevant nginx directives are `proxy_read_timeout` and `proxy_send_timeout` in the `/ws` location block. Without them, nginx drops idle WebSocket connections after the default 60 s.
+
+Implementation detail: `pingStop` is a channel closed after `<-done` (when the SSH copy goroutines finish) to cleanly stop the ping goroutine.
+
+## iPad / mobile terminal resize
+
+On iOS/iPadOS, switching apps pauses layout — when the user returns, the viewport may have changed but `ResizeObserver` does not reliably fire. Three events trigger `refitActive()` with a 100 ms `setTimeout` (giving the browser time to finish compositing):
+
+- `visibilitychange` → `visible` — main trigger when switching apps
+- `window focus` — covers desktop/split-view focus changes
+- `pageshow` — covers iOS back-forward cache restores (Safari BFCache)
+
+The delay is intentional: calling `fitAddon.fit()` at event time gives stale dimensions on iOS.
+
+## Light/Dark theme
+
+The UI supports dark (default) and light themes via CSS custom properties on `:root` / `:root[data-theme="light"]`. Theme preference is saved in `localStorage` under the key `"webssh-theme"`.
+
+- Toggle button: `☀`/`🌙` in the tab bar (when sessions exist) and a floating fixed button on the connect screen
+- `TERMINAL_THEMES` in `index.html` holds separate xterm.js color palettes for each theme; `applyTheme()` updates all open terminals live via `term.options.theme`
+- The floating toggle (`#theme-toggle-float`) is hidden when the tab bar is visible to avoid duplication
+
+## What has been built
 
 - Initial project (single-session WebSocket SSH proxy + xterm.js UI)
 - **Multi-tab support**: multiple simultaneous SSH sessions as browser tabs
@@ -100,3 +126,6 @@ go run main.go -cert x.crt -key x.key  # TLS
 - **End-to-end encryption**: ECDH + AES-256-GCM on every session (see Security layer above)
 - **Session name**: optional custom label in the connect form; falls back to `user@host:port`
 - **Clear form button**: "Clear" button next to "Connect" resets all fields (host, port→22, username, password, key, passphrase, session name) and switches auth tab back to Password
+- **WebSocket ping keepalive**: server pings every 30 s; fixes dropped connections through nginx (proxy_read_timeout, not keepalive_timeout)
+- **Light/Dark theme toggle**: CSS variable-based theming, persisted in localStorage, terminals update live
+- **iPad/mobile resize fix**: `visibilitychange`, `focus`, and `pageshow` events each call `refitActive()` with a 100 ms delay so the terminal re-fits when the user switches apps and returns
