@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -48,7 +49,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  4096,
 	WriteBufferSize: 4096,
 	// Allow all origins; restrict in production via the CheckOrigin callback.
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(_ *http.Request) bool { return true },
 }
 
 // safeWriter serialises concurrent WebSocket writes (gorilla/websocket is not
@@ -123,7 +124,7 @@ func encryptMsg(gcm cipher.AEAD, plaintext []byte) ([]byte, error) {
 func decryptMsg(gcm cipher.AEAD, data []byte) ([]byte, error) {
 	ns := gcm.NonceSize()
 	if len(data) < ns {
-		return nil, fmt.Errorf("ciphertext too short")
+		return nil, errors.New("ciphertext too short")
 	}
 	return gcm.Open(nil, data[:ns], data[ns:], nil)
 }
@@ -158,7 +159,7 @@ func buildAuthMethods(cfg ConnectConfig) ([]ssh.AuthMethod, error) {
 	}
 
 	if len(methods) == 0 {
-		return nil, fmt.Errorf("no authentication method provided (password or private key required)")
+		return nil, errors.New("no authentication method provided (password or private key required)")
 	}
 	return methods, nil
 }
@@ -208,7 +209,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 
 	var clientKeyMsg KeyMsg
 	if err := json.Unmarshal(clientKeyRaw, &clientKeyMsg); err != nil || clientKeyMsg.Type != "key" {
-		log.Printf("invalid client key message")
+		log.Print("invalid client key message")
 		return
 	}
 

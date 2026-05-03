@@ -566,6 +566,7 @@
               id="passphrase"
               type="password"
               placeholder="leave blank if key is unencrypted"
+              autocomplete="new-password"
             />
           </div>
         </div>
@@ -966,7 +967,7 @@
               return;
             }
             payload.private_key = keyText;
-            payload.passphrase = passphraseInput.value;
+            payload.passphrase = passphraseInput.value.trim();
           } else {
             payload.password = passInput.value;
           }
@@ -1155,6 +1156,7 @@
           authKey.style.display = "none";
           tabPassword.classList.add("active");
           tabKey.classList.remove("active");
+          authMode = "password";
           setStatus("", "");
           hostInput.focus();
         });
